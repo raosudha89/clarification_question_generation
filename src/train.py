@@ -4,19 +4,23 @@ from masked_cross_entropy import *
 
 from constants import *
 
-def train(input_batches, input_lengths, target_batches, target_lengths, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion):
+def train(p_input_batches, p_input_lengths, q_input_batches, q_input_lengths, target_batches, target_lengths, \
+			avg_emb_encoder, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion):
 	
 	# Zero gradients of both optimizers
 	encoder_optimizer.zero_grad()
 	decoder_optimizer.zero_grad()
 	loss = 0 # Added onto for each word
 
+	# Run post words through avg_emb_encoder
+	p_encoder_output = avg_emb_encoder(p_input_batches)	
+
 	# Run words through encoder
-	encoder_outputs, encoder_hidden = encoder(input_batches, input_lengths, None)
+	encoder_outputs, encoder_hidden = encoder(q_input_batches, q_input_lengths, None)
 	
 	# Prepare input and output variables
 	decoder_input = Variable(torch.LongTensor([SOS_token] * batch_size))
-	decoder_hidden = encoder_hidden[:decoder.n_layers] # Use last (forward) hidden state from encoder
+	decoder_hidden = p_encoder_output + encoder_hidden[:decoder.n_layers] # Use avg p emb + last (forward) hidden state from encoder
 
 	max_target_length = max(target_lengths)
 	all_decoder_outputs = Variable(torch.zeros(max_target_length, batch_size, decoder.output_size))

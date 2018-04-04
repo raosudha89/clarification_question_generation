@@ -98,11 +98,23 @@ def normalize_string(s, max_len):
 	s = ' '.join(words[:max_len])
 	return s
 
+def get_sim_ques(sim_ques_filename):
+	sim_ques_file = open(sim_ques_filename, 'r')
+	sim_ques = {}
+	for line in sim_ques_file.readlines():
+		parts = line.split()
+		if len(parts) > 1:
+			sim_ques[parts[0]] = parts[1:]
+		else:
+			sim_ques[parts[0]] = []
+	return sim_ques
 
-def read_data(post_data_tsv, qa_data_tsv):
+
+def read_data(post_data_tsv, qa_data_tsv, sim_ques_filename):
 	print("Reading lines...")
 	posts = {}
-	pairs = []
+	questions = {}
+	triples = []
 	p_tf = defaultdict(int)
 	p_idf = defaultdict(int)
 	with open(post_data_tsv, 'rb') as tsvfile:
@@ -125,6 +137,9 @@ def read_data(post_data_tsv, qa_data_tsv):
 	for w in p_idf:
 		p_idf[w] = math.log(N*1.0/p_idf[w])
 
+	sim_ques = get_sim_ques(sim_ques_filename)	
+
+	no_sim_ques = 0
 	with open(qa_data_tsv, 'rb') as tsvfile:
 		qa_reader = csv.reader(tsvfile, delimiter='\t')
 		i = 0
@@ -134,18 +149,17 @@ def read_data(post_data_tsv, qa_data_tsv):
 				continue
 			post_id,question = row[0], row[1]
 			question = normalize_string(question, MAX_QUES_LEN)
-			pairs.append((posts[post_id], question))
+			questions[post_id] = question
 
-	input_data = Data('post', p_tf, p_idf)
-	output_data = Data('question')
+	for post_id in questions:	
+		try:
+			triples.append([posts[post_id], questions[sim_ques[post_id][1]], questions[post_id]]) #first ques in the sim ques is the org ques itself
+		except:
+			no_sim_ques += 1
 
-	return input_data, output_data, pairs
+	print 'No sim ques for %d questions' % no_sim_ques
+	p_data = Data('post', p_tf, p_idf)
+	q_data = Data('question')
 
+	return p_data, q_data, triples
 
-def read_data_fr_en(filename):
-	pairs = []
-	input_data = Data('fr')
-	output_data = Data('en')
-	lines = open(filename).read().strip().split('\n')
-	pairs = [[normalize_string(s, MAX_QUES_LEN) for s in l.split('\t')] for l in lines]
-	return input_data, output_data, pairs

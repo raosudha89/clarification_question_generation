@@ -2,12 +2,13 @@ USE_CUDA = True
 
 # Configure models
 attn_model = 'dot'
-hidden_size = 500
+hidden_size = 200
 #hidden_size = 100
 n_layers = 2
 dropout = 0.1
 batch_size = 100
 #batch_size = 256
+word_emb_size = 200
 
 # Configure training/optimization
 clip = 50.0
