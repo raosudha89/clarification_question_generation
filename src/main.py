@@ -54,19 +54,19 @@ def main(args):
 	# Initialize models
 	#p_encoder = EncoderAvgEmb(pretrained_emb)
 	p_encoder = EncoderRNN(p_data.n_words, hidden_size, n_layers, dropout=dropout)
-	encoder = EncoderRNN(q_data.n_words, hidden_size, n_layers, dropout=dropout)
+	q_encoder = EncoderRNN(q_data.n_words, hidden_size, n_layers, dropout=dropout)
 	decoder = AttnDecoderRNN(attn_model, hidden_size, q_data.n_words, n_layers)
 
 	# Initialize optimizers and criterion
-	p_encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
-	encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
+	p_encoder_optimizer = optim.Adam(p_encoder.parameters(), lr=learning_rate)
+	q_encoder_optimizer = optim.Adam(q_encoder.parameters(), lr=learning_rate)
 	decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate * decoder_learning_ratio)
 	criterion = nn.CrossEntropyLoss()
 
 	# Move models to GPU
 	if USE_CUDA:
 		p_encoder.cuda()
-		encoder.cuda()
+		q_encoder.cuda()
 		decoder.cuda()
 
 	import sconce
@@ -109,8 +109,8 @@ def main(args):
 			p_input_batches, p_input_lengths, 
 			q_input_batches, q_input_lengths, 
 			target_batches, target_lengths,
-			p_encoder, encoder, decoder,
-			p_encoder_optimizer, encoder_optimizer, decoder_optimizer, criterion
+			p_encoder, q_encoder, decoder,
+			p_encoder_optimizer, q_encoder_optimizer, decoder_optimizer, criterion
 		)
 	
 		# Keep track of loss
@@ -128,7 +128,7 @@ def main(args):
 			print(print_summary)
 			
 		if epoch % evaluate_every == 0:
-			evaluate_randomly(p_data, q_data, test_triples, p_encoder, encoder, decoder)
+			evaluate_randomly(p_data, q_data, test_triples, p_encoder, q_encoder, decoder)
 	
 		if epoch % plot_every == 0:
 			plot_loss_avg = plot_loss_total / plot_every

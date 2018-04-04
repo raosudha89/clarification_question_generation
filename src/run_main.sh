@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=qg_au_prnn
-#SBATCH --output=qg_au_prnn
+#SBATCH --job-name=qg_au_pq_rnn
+#SBATCH --output=qg_au_pq_rnn
 #SBATCH --qos=gpu-long
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu
