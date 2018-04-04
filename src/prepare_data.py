@@ -48,7 +48,8 @@ def random_batch(batch_size, p_input_data, q_data, triples):
 		target_seqs.append(indexes_from_sentence(q_data, triple[2]))
 
 	# Zip into triples, sort by length (descending), unzip
-	seq_triples = sorted(zip(p_input_seqs, q_input_seqs, target_seqs), key=lambda p: len(p[1]), reverse=True)
+	#seq_triples = sorted(zip(p_input_seqs, q_input_seqs, target_seqs), key=lambda p: len(p[1]), reverse=True)
+	seq_triples = sorted(zip(p_input_seqs, q_input_seqs, target_seqs), key=lambda p: len(p[0]), reverse=True)
 	p_input_seqs, q_input_seqs, target_seqs = zip(*seq_triples)
 	
 	# For input and target sequences, get array of lengths and pad with 0s to max length

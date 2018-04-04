@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=qg_au_simq
-#SBATCH --output=qg_au_simq
-#SBATCH --qos=gpu-medium
+#SBATCH --job-name=qg_au_prnn
+#SBATCH --output=qg_au_prnn
+#SBATCH --qos=gpu-long
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu
 #SBATCH --time=24:00:00

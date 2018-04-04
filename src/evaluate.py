@@ -6,12 +6,12 @@ import torch.nn as nn
 from torch.autograd import Variable
 from visualize import *
 
-def evaluate_randomly(p_input_data, q_data, triples, avg_emb_encoder, encoder, decoder):
+def evaluate_randomly(p_input_data, q_data, triples, p_encoder, encoder, decoder):
 	[p_input_sentence, q_input_sentence, target_sentence] = random.choice(triples)
-	evaluate_and_show_attention(p_input_data, q_data, avg_emb_encoder, encoder, decoder, p_input_sentence, q_input_sentence, target_sentence)
+	evaluate_and_show_attention(p_input_data, q_data, p_encoder, encoder, decoder, p_input_sentence, q_input_sentence, target_sentence)
 	
-def evaluate_and_show_attention(p_input_data, q_data, avg_emb_encoder, encoder, decoder, p_input_sentence, q_input_sentence, target_sentence=None):
-	output_words, attentions = evaluate(p_input_data, q_data, avg_emb_encoder, encoder, decoder, p_input_sentence, q_input_sentence)
+def evaluate_and_show_attention(p_input_data, q_data, p_encoder, encoder, decoder, p_input_sentence, q_input_sentence, target_sentence=None):
+	output_words, attentions = evaluate(p_input_data, q_data, p_encoder, encoder, decoder, p_input_sentence, q_input_sentence)
 	output_sentence = ' '.join(output_words)
 	print('>', p_input_sentence)
 	print('>', q_input_sentence)
@@ -26,7 +26,7 @@ def evaluate_and_show_attention(p_input_data, q_data, avg_emb_encoder, encoder, 
 	#text = '<p>&gt; %s</p><p>= %s</p><p>&lt; %s</p>' % (input_sentence, target_sentence, output_sentence)
 	#vis.text(text, win=win, opts={'title': win})
 
-def evaluate(p_input_data, q_data, avg_emb_encoder, encoder, decoder, p_input_seq, q_input_seq, max_length=MAX_POST_LEN):
+def evaluate(p_input_data, q_data, p_encoder, encoder, decoder, p_input_seq, q_input_seq, max_length=MAX_POST_LEN):
 	p_input_seqs = [indexes_from_sentence(p_input_data, p_input_seq)]
 	p_input_lengths = [len(p_input_seqs[0])]
 	p_input_batches = Variable(torch.LongTensor(p_input_seqs), volatile=True).transpose(0, 1)
@@ -40,18 +40,21 @@ def evaluate(p_input_data, q_data, avg_emb_encoder, encoder, decoder, p_input_se
 		q_input_batches = q_input_batches.cuda()
 		
 	# Set to not-training mode to disable dropout
+	p_encoder.train(False)
 	encoder.train(False)
 	decoder.train(False)
 	
-	# Run post words through avg_emb_encoder
-	p_encoder_output = avg_emb_encoder(p_input_batches)	
+	# Run post words through p_encoder
+	#p_encoder_output = p_encoder(p_input_batches)	
+	p_encoder_outputs, p_encoder_hidden = p_encoder(p_input_batches, p_input_lengths, None)	
 
 	# Run through encoder
 	encoder_outputs, encoder_hidden = encoder(q_input_batches, q_input_lengths, None)
 
 	# Create starting vectors for decoder
 	decoder_input = Variable(torch.LongTensor([SOS_token]), volatile=True) # SOS
-	decoder_hidden = p_encoder_output + encoder_hidden[:decoder.n_layers] # Use last (forward) hidden state from encoder
+	#decoder_hidden = p_encoder_output + encoder_hidden[:decoder.n_layers] # Use last (forward) hidden state from encoder
+	decoder_hidden = encoder_hidden[:decoder.n_layers] # Use last (forward) hidden state from encoder
 	
 	if USE_CUDA:
 		decoder_input = decoder_input.cuda()
@@ -63,7 +66,7 @@ def evaluate(p_input_data, q_data, avg_emb_encoder, encoder, decoder, p_input_se
 	# Run through decoder
 	for di in range(max_length):
 		decoder_output, decoder_hidden, decoder_attention = decoder(
-			decoder_input, decoder_hidden, encoder_outputs
+			decoder_input, decoder_hidden, p_encoder_outputs
 		)
 		decoder_attentions[di,:decoder_attention.size(2)] += decoder_attention.squeeze(0).squeeze(0).cpu().data
 
@@ -81,6 +84,7 @@ def evaluate(p_input_data, q_data, avg_emb_encoder, encoder, decoder, p_input_se
 		if USE_CUDA: decoder_input = decoder_input.cuda()
 
 	# Set back to training mode
+	p_encoder.train(True)
 	encoder.train(True)
 	decoder.train(True)
 	
