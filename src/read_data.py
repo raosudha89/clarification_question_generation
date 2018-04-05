@@ -153,8 +153,8 @@ def read_data(post_data_tsv, qa_data_tsv, sim_ques_filename):
 
 	for post_id in questions:	
 		try:
-			#sim_ques = ' EOS '.join([questions[sim_ques[post_id][1]], questions[sim_ques[post_id][2]], questions[sim_ques[post_id][3]]])
-			ret_ques = questions[sim_ques[post_id][1]]
+			#ret_ques = questions[sim_ques[post_id][1]]
+			ret_ques = ' EOS '.join([questions[sim_ques[post_id][1]], questions[sim_ques[post_id][2]], questions[sim_ques[post_id][3]]])
 			triples.append([posts[post_id], ret_ques, questions[post_id]]) #first ques in the sim ques is the org ques itself
 		except:
 			no_sim_ques += 1

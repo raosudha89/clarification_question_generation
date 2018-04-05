@@ -26,7 +26,7 @@ PAD_token = 0
 SOS_token = 1
 EOS_token = 2
 MAX_POST_LEN=25
-MAX_QUES_LEN=25
+MAX_QUES_LEN=75
 MIN_TFIDF=30
 clip = 50.0
 
