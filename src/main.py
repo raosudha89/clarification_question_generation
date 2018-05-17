@@ -43,13 +43,14 @@ def load_pretrained_emb(word_vec_fname, p_data):
 
 def main(args):
 
-	p_data, q_data, triples = prepare_data(args.post_data_tsvfile, args.qa_data_tsvfile, args.sim_ques_fname)
+	p_data, q_data, train_triples, test_triples = prepare_data(args.post_data_tsvfile, args.qa_data_tsvfile, \
+																args.train_ids_file, args.test_ids_file, args.sim_ques_fname)
 
 	pretrained_emb = load_pretrained_emb(args.word_vec_fname, p_data)
 
-	N = int(len(triples)*0.8)
-	train_triples = triples[:N]
-	test_triples = triples[N:]
+	#N = int(len(triples)*0.8)
+	#train_triples = triples[:N]
+	#test_triples = triples[N:]
 
 	# Initialize models
 	#p_encoder = EncoderAvgEmb(pretrained_emb)
@@ -95,7 +96,8 @@ def main(args):
 	dca = 0
 	epoch = 0.0
 	
-	print 'No. of triples %d' % len(triples)
+	print 'No. of train_triples %d' % len(train_triples)
+	print 'No. of test_triples %d' % len(test_triples)
 	
 	while epoch < n_epochs:
 		epoch += 1
@@ -150,6 +152,8 @@ if __name__ == "__main__":
 	argparser = argparse.ArgumentParser(sys.argv[0])
 	argparser.add_argument("--post_data_tsvfile", type = str)
 	argparser.add_argument("--qa_data_tsvfile", type = str)
+	argparser.add_argument("--train_ids_file", type = str)
+	argparser.add_argument("--test_ids_file", type = str)
 	argparser.add_argument("--sim_ques_fname", type = str)
 	argparser.add_argument("--word_vec_fname", type = str)
 	args = argparser.parse_args()

@@ -2,8 +2,8 @@ USE_CUDA = True
 
 # Configure models
 attn_model = 'dot'
-hidden_size = 200
-#hidden_size = 100
+#hidden_size = 500
+hidden_size = 100
 n_layers = 2
 dropout = 0.1
 batch_size = 100
@@ -26,7 +26,7 @@ PAD_token = 0
 SOS_token = 1
 EOS_token = 2
 MAX_POST_LEN=25
-MAX_QUES_LEN=75
+MAX_QUES_LEN=25
 MIN_TFIDF=30
 clip = 50.0
 

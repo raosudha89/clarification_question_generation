@@ -11,7 +11,8 @@ def evaluate_randomly(p_input_data, q_data, triples, p_encoder, q_encoder, decod
 	evaluate_and_show_attention(p_input_data, q_data, p_encoder, q_encoder, decoder, p_input_sentence, q_input_sentence, target_sentence)
 	
 def evaluate_and_show_attention(p_input_data, q_data, p_encoder, q_encoder, decoder, p_input_sentence, q_input_sentence, target_sentence=None):
-	output_words, p_attentions, q_attentions = evaluate(p_input_data, q_data, p_encoder, q_encoder, decoder, p_input_sentence, q_input_sentence)
+	#output_words, p_attentions, q_attentions = evaluate(p_input_data, q_data, p_encoder, q_encoder, decoder, p_input_sentence, q_input_sentence)
+	output_words = evaluate(p_input_data, q_data, p_encoder, q_encoder, decoder, p_input_sentence, q_input_sentence)
 	output_sentence = ' '.join(output_words)
 	print('>', p_input_sentence)
 	print('>', q_input_sentence)
@@ -69,8 +70,8 @@ def evaluate(p_input_data, q_data, p_encoder, q_encoder, decoder, p_input_seq, q
 		decoder_output, decoder_hidden, decoder_p_attn, decoder_q_attn = decoder(
 			decoder_input, decoder_hidden, p_encoder_outputs, q_encoder_outputs
 		)
-		decoder_p_attns[di,:decoder_p_attn.size(2)] += decoder_p_attn.squeeze(0).squeeze(0).cpu().data
-		decoder_q_attns[di,:decoder_q_attn.size(2)] += decoder_q_attn.squeeze(0).squeeze(0).cpu().data
+		#decoder_p_attns[di,:decoder_p_attn.size(2)] += decoder_p_attn.squeeze(0).squeeze(0).cpu().data
+		#decoder_q_attns[di,:decoder_q_attn.size(2)] += decoder_q_attn.squeeze(0).squeeze(0).cpu().data
 
 		# Choose top word from output
 		topv, topi = decoder_output.data.topk(1)
@@ -89,5 +90,6 @@ def evaluate(p_input_data, q_data, p_encoder, q_encoder, decoder, p_input_seq, q
 	p_encoder.train(True)
 	q_encoder.train(True)
 	decoder.train(True)
-	
-	return decoded_words, decoder_p_attns[:di+1, :len(p_encoder_outputs)], decoder_q_attns[:di+1, :len(q_encoder_outputs)]
+
+	return decoded_words	
+	#return decoded_words, decoder_p_attns[:di+1, :len(p_encoder_outputs)], decoder_q_attns[:di+1, :len(q_encoder_outputs)]

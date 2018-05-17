@@ -12,6 +12,7 @@ MIN_TFIDF=2
 #MIN_QUES_TFIDF=3000
 #MIN_QUES_TFIDF=1000
 MAX_QUES_TFIDF=10
+#MAX_QUES_TFIDF=8.5
 
 def write_to_file(ids, args, prods, quess, template_quess, sim_prod, sim_ques, split):
 	suffix = ''
@@ -57,9 +58,9 @@ def write_to_file(ids, args, prods, quess, template_quess, sim_prod, sim_ques, s
 			for k in range(1, 4):
 				if args.candqs:
 					if args.template:
-						src_line += template_quess[sim_prod[prod_id][k]][(j+1)%len(template_quess[sim_prod[prod_id][k]])] + ' <EOQ> '
+						src_line += template_quess[sim_prod[prod_id][k]][(j)%len(template_quess[sim_prod[prod_id][k]])] + ' <EOQ> '
 					else:
-						src_line += quess[sim_prod[prod_id][k]][(j+1)%len(quess[sim_prod[prod_id][k]])] + ' <EOQ> '
+						src_line += quess[sim_prod[prod_id][k]][(j)%len(quess[sim_prod[prod_id][k]])] + ' <EOQ> '
 				if args.simqs:
 					sim_prod_id, sim_q_no = sim_ques[ques_id][k].split('_')
 					sim_q_no = int(sim_q_no)-1
@@ -116,11 +117,14 @@ def template_by_tfidf(quess, q_tf, q_idf):
 		for ques in quess[prod_id]:
 			template_ques = []
 			words = ques.split()
+			#print words
+			#pdb.set_trace()
 			for w in words:
 				tf = words.count(w)
-				pdb.set_trace()
 				#if q_tf[w]*q_idf[w] >= MIN_QUES_TFIDF or w == '?':
-				if has_number(w) or tf*q_idf[w] > MAX_QUES_TFIDF:
+				#if has_number(w) or tf*q_idf[w] > MAX_QUES_TFIDF:
+				if has_number(w) or q_idf[w] > MAX_QUES_TFIDF:
+					#print w
 					template_ques.append('<BLANK>')
 				else:
 					template_ques.append(w)
@@ -174,19 +178,25 @@ def read_data(args):
 	N = 0
 	q_tf = defaultdict(int)
 	q_idf = defaultdict(int)
+	quess_rand = defaultdict(list)
 	for fname in os.listdir(args.ques_dir):
 		with open(os.path.join(args.ques_dir, fname), 'r') as f:
-			asin, q_no = fname[:-4].split('_')
+			ques_id = fname[:-4]
+			asin, q_no = ques_id.split('_')
 			ques = f.readline().strip('\n')
 			ques = trim_by_len(ques, MAX_QUES_LEN)
 			for w in ques.split():
 				q_tf[w] += 1
 			for w in set(ques.split()):
 				q_idf[w] += 1
-			if asin not in quess:
-				quess[asin] = []
-			quess[asin].append(ques)
+			quess_rand[asin].append((ques, q_no))
 			N += 1
+
+	for asin in quess_rand:
+		quess[asin] = [None]*len(quess_rand[asin])
+		for (ques, q_no) in quess_rand[asin]:
+			q_no = int(q_no)-1
+			quess[asin][q_no] = ques
 
 	for w in q_idf:
 		q_idf[w] = math.log(N*1.0/q_idf[w])

@@ -1,10 +1,10 @@
 import torch
 from torch.autograd import Variable
 from masked_cross_entropy import *
-
+import numpy as np
 from constants import *
 
-def train(p_input_batches, p_input_lengths, q_input_batches, q_input_lengths, target_batches, target_lengths, \
+def train(p_input_batches, p_input_lengths, q_input_batches_list, q_input_lengths_list, target_batches, target_lengths, \
 			p_encoder, q_encoder, decoder, p_encoder_optimizer, q_encoder_optimizer, decoder_optimizer, criterion):
 	
 	# Zero gradients of both optimizers
@@ -18,12 +18,20 @@ def train(p_input_batches, p_input_lengths, q_input_batches, q_input_lengths, ta
 	p_encoder_outputs, p_encoder_hidden = p_encoder(p_input_batches, p_input_lengths, None)	
 
 	# Run words through encoder
-	q_encoder_outputs, q_encoder_hidden = q_encoder(q_input_batches, q_input_lengths, None)
+	N_q = len(q_input_batches_list)
+	q_input_batches_list = np.array(q_input_batches_list)
+	q_input_lengths_list = np.array(q_input_lengths_list)
+	q_encoder_outputs_list, q_encoder_hidden_list = [None]*N_q, [None]*N_q
+	for i in range(N_q):
+		q_encoder_outputs_list[i], q_encoder_hidden_list[i] = q_encoder(q_input_batches_list[:,:,i], q_input_lengths_list[:,i], None)
 	
 	# Prepare input and output variables
 	decoder_input = Variable(torch.LongTensor([SOS_token] * batch_size))
 	#decoder_hidden = p_encoder_output + encoder_hidden[:decoder.n_layers] # Use avg p emb + last (forward) hidden state from encoder
-	decoder_hidden = p_encoder_hidden[:decoder.n_layers] + q_encoder_hidden[:decoder.n_layers] # Use last (forward) hidden state from encoder
+	#decoder_hidden = p_encoder_hidden[:decoder.n_layers] + q_encoder_hidden[:decoder.n_layers] # Use last (forward) hidden state from encoder
+	decoder_hidden = p_encoder_hidden[:decoder.n_layers]
+	for i in range(N_q):
+		decoder_hidden += q_encoder_hidden_list[i][:decoder.n_layers]
 
 	max_target_length = max(target_lengths)
 	all_decoder_outputs = Variable(torch.zeros(max_target_length, batch_size, decoder.output_size))
@@ -37,7 +45,7 @@ def train(p_input_batches, p_input_lengths, q_input_batches, q_input_lengths, ta
 	#print 'max target len %d ' % max_target_length
 	for t in range(max_target_length):
 		decoder_output, decoder_hidden, decoder_p_attn, decoder_q_attn = decoder(
-			decoder_input, decoder_hidden, p_encoder_outputs, q_encoder_outputs
+			decoder_input, decoder_hidden, p_encoder_outputs, q_encoder_outputs_list
 		)
 
 		all_decoder_outputs[t] = decoder_output

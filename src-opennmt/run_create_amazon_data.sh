@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#SBATCH --job-name=nocontext_candqs_template_Electronics
-#SBATCH --output=nocontext_candqs_template_Electronics
+#SBATCH --job-name=candqs_template_Electronics
+#SBATCH --output=candqs_template_Electronics
 #SBATCH --qos=batch
-#SBATCH --mem=36g
-#SBATCH --time=24:00:00
+#SBATCH --mem=4g
+#SBATCH --time=4:00:00
 
 SITENAME=Electronics
 DATA_DIR=/fs/clip-corpora/amazon_qa/$SITENAME
@@ -25,6 +25,7 @@ python $SCRIPT_DIR/create_amazon_data.py 	--prod_dir $DATA_DIR/prod_docs \
 											--tune_ids_file $CQ_DATA_DIR/tune_ids \
 											--test_ids_file $CQ_DATA_DIR/test_ids \
 											--candqs True\
-											--template True\
+											--template True \
+											#--onlycontext True \
 											#--nocontext True \
-											#--simqs True\
+											#--simqs True \

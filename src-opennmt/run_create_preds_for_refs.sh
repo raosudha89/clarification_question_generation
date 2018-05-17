@@ -13,7 +13,12 @@
 #SUFFIX=candqs_copy
 #SUFFIX=candqs_copy_coverage
 #SUFFIX=simqs_candqs
-SUFFIX=simqs_template_candqs_template
+#SUFFIX=simqs_candqs_copy
+SUFFIX=simqs_candqs_copy_coverage
+#SUFFIX=simqs_template
+#SUFFIX=simqs_template_candqs_template
+#SUFFIX=simqs_template_candqs_template_copy
+#SUFFIX=simqs_template_candqs_template_copy_coverage
 
 SITENAME=askubuntu_unix_superuser
 DATA_DIR=/fs/clip-amr/ranking_clarification_questions/data/$SITENAME

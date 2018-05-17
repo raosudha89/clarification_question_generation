@@ -109,12 +109,10 @@ def get_sim_ques(sim_ques_filename):
 			sim_ques[parts[0]] = []
 	return sim_ques
 
-
-def read_data(post_data_tsv, qa_data_tsv, sim_ques_filename):
+def read_data(post_data_tsv, qa_data_tsv, train_ids_file, test_ids_file, sim_ques_filename):
 	print("Reading lines...")
 	posts = {}
 	questions = {}
-	triples = []
 	p_tf = defaultdict(int)
 	p_idf = defaultdict(int)
 	with open(post_data_tsv, 'rb') as tsvfile:
@@ -151,11 +149,19 @@ def read_data(post_data_tsv, qa_data_tsv, sim_ques_filename):
 			question = normalize_string(question, MAX_QUES_LEN)
 			questions[post_id] = question
 
+	train_ids = [train_id.strip('\n') for train_id in open(train_ids_file, 'r').readlines()]
+	test_ids = [test_id.strip('\n') for test_id in open(test_ids_file, 'r').readlines()]
+	train_triples = []
+	test_triples = []
 	for post_id in questions:	
 		try:
 			#ret_ques = questions[sim_ques[post_id][1]]
-			ret_ques = ' EOS '.join([questions[sim_ques[post_id][1]], questions[sim_ques[post_id][2]], questions[sim_ques[post_id][3]]])
-			triples.append([posts[post_id], ret_ques, questions[post_id]]) #first ques in the sim ques is the org ques itself
+			#ret_ques = ' EOS '.join([questions[sim_ques[post_id][1]], questions[sim_ques[post_id][2]], questions[sim_ques[post_id][3]]])
+			ret_ques = [questions[sim_ques[post_id][1]], questions[sim_ques[post_id][2]], questions[sim_ques[post_id][3]]]
+			if post_id in train_ids:
+				train_triples.append([posts[post_id], ret_ques, questions[post_id]]) #first ques in the sim ques is the org ques itself
+			if post_id in test_ids:
+				test_triples.append([posts[post_id], ret_ques, questions[post_id]]) #first ques in the sim ques is the org ques itself
 		except:
 			no_sim_ques += 1
 
@@ -163,5 +169,5 @@ def read_data(post_data_tsv, qa_data_tsv, sim_ques_filename):
 	p_data = Data('post', p_tf, p_idf)
 	q_data = Data('question')
 
-	return p_data, q_data, triples
+	return p_data, q_data, train_triples, test_triples
 
