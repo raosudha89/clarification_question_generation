@@ -4,6 +4,8 @@ from collections import defaultdict
 import csv
 import math
 import pdb
+import random
+import numpy as np
 
 MAX_POST_LEN=200
 MAX_QUES_LEN=40
@@ -13,7 +15,7 @@ MIN_QUES_TFIDF=2000
 #MAX_QUES_TFIDF=8
 MAX_QUES_TFIDF=10
 
-def write_to_file(ids, args, posts, question_candidates, template_question_candidates, sim_ques, split):
+def write_to_file(ids, args, posts, question_candidates, template_question_candidates, sim_ques, split, candqs_list=None):
 	suffix = ''
 	if args.nocontext:
 		suffix += '_nocontext'
@@ -36,31 +38,63 @@ def write_to_file(ids, args, posts, question_candidates, template_question_candi
 	if split == 'test':
 		src_file = open(args.test_src_fname+suffix, 'w')
 		tgt_file = open(args.test_tgt_fname+suffix, 'w')
-
-	for post_id in ids:
+		if not candqs_list:
+			test_candqs_list_file = open(args.test_candqs_list_fname, 'w')
+			
+	if not candqs_list:
+		candqs_list = [None]*len(ids)
+	for k, post_id in enumerate(ids):
 		src_line = ''
 		if not args.nocontext:
 			src_line += posts[post_id]+' <EOP> '
-		i = 1
-		n = 0
-		while n < 3 and i < 10:
-			try:
-				if args.simqs:
+		if not candqs_list[k]:
+			random_list = range(1,10)
+			random.shuffle(random_list)
+			candqs_list[k] = random_list[:3]
+			if split == 'test':
+				test_candqs_list_file.write(' '.join([str(s) for s in candqs_list[k]])+'\n')
+		if args.candqs:
+			for i in range(3):
+				if args.template:
+					src_line += template_question_candidates[post_id][candqs_list[k][i]]+' <EOQ> '
+				else:
+					src_line += question_candidates[post_id][candqs_list[k][i]]+' <EOQ> '
+		if args.simqs:
+			i = 1
+			n = 0
+			while n < 3 and i < 10:
+				try:
 					if args.template:
 						src_line += template_question_candidates[sim_ques[post_id][i]][0]+' <EOQ> '
 					else:
-						src_line += question_candidates[sim_ques[post_id][i]][0]+' <EOQ> '
-				if args.candqs:
-					if args.template:
-						src_line += template_question_candidates[post_id][i]+' <EOQ> '
-					else:
-						src_line += question_candidates[post_id][i]+' <EOQ> '
-				i += 1
-				n += 1
-			except:
-				i += 1
+						src_line += question_candidates[sim_ques[post_id][i]][0]+' <EOQ> '				
+					i += 1
+					n += 1
+				except:
+					i += 1
+		# i = 1
+		# n = 0
+		# while n < 3 and i < 10:
+		# 	try:
+		# 		if args.simqs:
+		# 			if args.template:
+		# 				src_line += template_question_candidates[sim_ques[post_id][i]][0]+' <EOQ> '
+		# 			else:
+		# 				src_line += question_candidates[sim_ques[post_id][i]][0]+' <EOQ> '
+		# 		if args.candqs:
+		# 			if args.template:
+		# 				src_line += template_question_candidates[post_id][i]+' <EOQ> '
+		# 			else:
+		# 				src_line += question_candidates[post_id][i]+' <EOQ> '
+		# 		i += 1
+		# 		n += 1
+		# 	except:
+		# 		i += 1
 		src_file.write(src_line+'\n')	
 		tgt_file.write(question_candidates[post_id][0]+'\n')
+	
+	src_file.close()
+	tgt_file.close()
 
 def get_sim_ques(sim_ques_filename):
 	sim_ques_file = open(sim_ques_filename, 'r')
@@ -115,6 +149,13 @@ def template_by_tfidf(question_candidates, q_tf, q_idf):
 					template_ques.append(w)
 			template_question_candidates[post_id].append(' '.join(template_ques))
 	return template_question_candidates
+
+def read_test_candqs_list(test_candqs_list_fname):
+	test_candqs_list = []
+	for line in open(test_candqs_list_fname, 'r').readlines():
+		line = line.strip('\n')
+		test_candqs_list.append([int(c) for c in line.split()])
+	return test_candqs_list
 
 def read_data(args):
 	print("Reading lines...")
@@ -175,9 +216,14 @@ def read_data(args):
 	tune_ids = [tune_id.strip('\n') for tune_id in open(args.tune_ids_file, 'r').readlines()]
 	test_ids = [test_id.strip('\n') for test_id in open(args.test_ids_file, 'r').readlines()]
 	
-	write_to_file(train_ids, args, posts, question_candidates, template_question_candidates, sim_ques, split='train')	
-	write_to_file(tune_ids, args, posts, question_candidates, template_question_candidates, sim_ques, split='tune')	
-	write_to_file(test_ids, args, posts, question_candidates, template_question_candidates, sim_ques, split='test')	
+	if os.path.exists(args.test_candqs_list_fname):
+		test_candqs_list = read_test_candqs_list(args.test_candqs_list_fname)
+	else:
+		test_candqs_list = None
+	
+	write_to_file(train_ids, args, posts, question_candidates, template_question_candidates, sim_ques, 'train')	
+	write_to_file(tune_ids, args, posts, question_candidates, template_question_candidates, sim_ques, 'tune')	
+	write_to_file(test_ids, args, posts, question_candidates, template_question_candidates, sim_ques, 'test',test_candqs_list)	
 
 if __name__ == "__main__":
 	argparser = argparse.ArgumentParser(sys.argv[0])
@@ -193,6 +239,7 @@ if __name__ == "__main__":
 	argparser.add_argument("--test_src_fname", type = str)
 	argparser.add_argument("--test_tgt_fname", type = str)
 	argparser.add_argument("--sim_ques_fname", type = str)
+	argparser.add_argument("--test_candqs_list_fname", type = str)
 	argparser.add_argument("--simqs", type = bool)
 	argparser.add_argument("--candqs", type = bool)
 	argparser.add_argument("--template", type = bool)
