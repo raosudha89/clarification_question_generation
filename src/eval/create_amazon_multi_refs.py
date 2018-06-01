@@ -5,19 +5,25 @@ import nltk
 import time
 import random
 from collections import defaultdict
-MAX_REF_COUNT=20
 
 def create_refs(test_ids, question_candidates, ref_prefix):
-	ref_files = [None]*MAX_REF_COUNT
-	for i in range(MAX_REF_COUNT):
+	max_ref_count=0
+	for ques_id in test_ids:
+		asin = ques_id.split('_')[0]
+		N = len(question_candidates[asin])
+		max_ref_count = max(max_ref_count, N)
+	ref_files = [None]*max_ref_count
+	for i in range(max_ref_count):
 		ref_files[i] = open(ref_prefix+str(i), 'w')
 	for ques_id in test_ids:
 		asin = ques_id.split('_')[0]
 		N = len(question_candidates[asin])
 		for i, ques in enumerate(question_candidates[asin]):
 			ref_files[i].write(ques+'\n')
-		for j in range(N, MAX_REF_COUNT):
-			r = random.randint(0, N-1)
+		choices = range(N)
+		random.shuffle(choices)
+		for j in range(N, max_ref_count):
+			r = choices[j%N]
 			ref_files[j].write(question_candidates[asin][r]+'\n')
 
 def main(args):
